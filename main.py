@@ -10,17 +10,19 @@ from google.oauth2.credentials import Credentials
 # Constants
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 CREDENTIALS_FILE = 'credentials.json'
-SPREADSHEET_ID = 'your-spreadsheet-id'
-SHEET_NAME = 'Your Sheet Name'
+SPREADSHEET_ID = 'spreadsheet'
+SHEET_NAME = 'spreadsheet'
 RANGE_NAME = 'A1:E10'
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 587
-FROM_EMAIL = 'your-email@gmail.com'
+FROM_EMAIL = 'hk898243gmail.com'
 PASSWORD = 'your-password'
 
 def get_google_sheets_service():
-    """Get Google Sheets API service."""
-    creds = Credentials.from_authorized_user_file('token.json', SCOPES) if os.path.exists('token.json') else None
+    """Set up and return Google Sheets API service."""
+    creds = None
+    if os.path.exists('token.json'):
+        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
@@ -33,7 +35,10 @@ def get_google_sheets_service():
 
 def fetch_event_data(service):
     """Fetch event data from Google Sheets."""
-    result = service.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range=f'{SHEET_NAME}!{RANGE_NAME}').execute()
+    result = service.spreadsheets().values().get(
+        spreadsheetId=SPREADSHEET_ID,
+        range=f'{SHEET_NAME}!{RANGE_NAME}'
+    ).execute()
     return result.get('values', [])
 
 def send_email(subject, body, to_email):
@@ -48,17 +53,20 @@ def send_email(subject, body, to_email):
         server.sendmail(FROM_EMAIL, to_email, msg.as_string())
 
 def main():
-    """Main function to fetch data and send emails."""
+    """Main function to orchestrate fetching data and sending emails."""
     service = get_google_sheets_service()
     events = fetch_event_data(service)
+    
     now = datetime.datetime.now()
     reminder_threshold = now + datetime.timedelta(days=7)
     
     for row in events:
         try:
-            event_name, event_date_str, event_time_str, notification_email = row
-            event_date = datetime.datetime.strptime(event_date_str, '%Y-%m-%d')
-            event_time = datetime.datetime.strptime(event_time_str, '%H:%M').time()
+            event_name = row[0]
+            event_date = datetime.datetime.strptime(row[1], '%Y-%m-%d')
+            event_time = datetime.datetime.strptime(row[2], '%H:%M').time()
+            notification_email = row[3]
+            
             event_datetime = datetime.datetime.combine(event_date, event_time)
             
             if event_datetime <= reminder_threshold:
@@ -66,7 +74,7 @@ def main():
                 body = f'Reminder: {event_name} on {event_date.strftime("%Y-%m-%d")} at {event_time.strftime("%H:%M")}'
                 send_email(subject, body, notification_email)
         
-        except ValueError as e:
+        except (IndexError, ValueError) as e:
             print(f'Error processing row {row}: {e}')
 
 if __name__ == '__main__':
