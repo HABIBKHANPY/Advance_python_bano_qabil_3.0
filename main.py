@@ -10,7 +10,7 @@ from google.oauth2.credentials import Credentials
 # Constants
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 CREDENTIALS_FILE = 'credentials.json'
-SPREADSHEET_ID = 'spreadsheet'
+SPREADSHEET_ID = 'https://docs.google.com/spreadsheets/d/1Nnpv8uuqWd2fcx6rgb8cpjdmDtgUbbBETDOXYzTzexo/edit?usp=sharing'
 SHEET_NAME = 'spreadsheet'
 RANGE_NAME = 'A1:E10'
 SMTP_SERVER = 'smtp.gmail.com'
